@@ -1,0 +1,174 @@
+{
+  "version": "1.0",
+  "exported_at": "2026-05-11T18:05:00Z",
+  "metadata": {
+    "name": "Tech Company Market Research (Looped)",
+    "description": "Takes three tech companies as input, then sequentially loops through each one: researches the company on the web and folds the result into a cumulative comparative summary. The final loop iteration produces the full multi-company report.",
+    "created_by": { "name": "Payal Singh", "email": null },
+    "exported_by": { "name": "Payal Singh", "email": null },
+    "north_version": "0.226.8"
+  },
+  "graph_spec": {
+    "inputs": [
+      {
+        "input_id": "company1",
+        "name": "Company 1",
+        "input_type_id": "inputs::text",
+        "required": true,
+        "default_value": null,
+        "description": "Name of the first tech company to research (e.g., Anthropic).",
+        "constraints": null
+      },
+      {
+        "input_id": "company2",
+        "name": "Company 2",
+        "input_type_id": "inputs::text",
+        "required": true,
+        "default_value": null,
+        "description": "Name of the second tech company to research (e.g., OpenAI).",
+        "constraints": null
+      },
+      {
+        "input_id": "company3",
+        "name": "Company 3",
+        "input_type_id": "inputs::text",
+        "required": true,
+        "default_value": null,
+        "description": "Name of the third tech company to research (e.g., Cohere).",
+        "constraints": null
+      }
+    ],
+    "nodes": [
+      {
+        "node_id": "node-xMGwz42Q",
+        "name": "Prepare Company List",
+        "parent_node_id": null,
+        "display_properties": { "pos_x": 0.0, "pos_y": 0.0 },
+        "config": {
+          "node_type_id": "nodes::agent",
+          "prompt": "You are preparing a list of tech companies for downstream market research.\n\nThe user provided three company names:\n1. {{ inputs.company1 }}\n2. {{ inputs.company2 }}\n3. {{ inputs.company3 }}\n\nReturn the three companies as an ordered list, preserving the input order. Trim leading/trailing whitespace, expand obvious abbreviations only when unambiguous (e.g., 'GOOG' -> 'Google'), and otherwise keep the names exactly as provided. Do not add any companies the user did not list.",
+          "model": {
+            "model_name": "north-large-01-2026",
+            "provider_name": "cohere_platform"
+          },
+          "tools": [],
+          "output_format": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "companies": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            },
+            "required": ["companies"]
+          },
+          "max_iterations": null,
+          "max_tokens": null,
+          "reasoning_enabled": null,
+          "system_prompt": null
+        }
+      },
+      {
+        "node_id": "node-UHYq12DQ",
+        "name": "Per-Company Research + Cumulative Synthesis Loop",
+        "parent_node_id": null,
+        "display_properties": { "pos_x": 320.0, "pos_y": 0.0 },
+        "config": {
+          "node_type_id": "nodes::loop",
+          "loop_config": {
+            "loop_type": "foreach",
+            "collection": "results.node-xMGwz42Q.output.data.companies",
+            "parallelism": { "maximum": 1 }
+          }
+        }
+      },
+      {
+        "node_id": "node-tQ_9Ygx6",
+        "name": "Market Research Agent",
+        "parent_node_id": "node-UHYq12DQ",
+        "display_properties": { "pos_x": 0.0, "pos_y": 0.0 },
+        "config": {
+          "node_type_id": "nodes::agent",
+          "prompt": "You are a senior tech-industry market research analyst.\n\nResearch the following company in depth and produce a fact-based market profile:\n\nCOMPANY: {{ results.node-UHYq12DQ.current_iteration.item }}\n\nUse the web_tools tool to gather up-to-date information from authoritative sources (the company's own site / IR pages, reputable tech press, analyst reports, recent regulatory filings). Run multiple targeted searches if needed (e.g., 'COMPANY products 2026', 'COMPANY revenue financials', 'COMPANY recent news', 'COMPANY competitors').\n\nStrict guidelines:\n- Cite specific facts (numbers, dates, product names) when available; avoid generic marketing language.\n- If a piece of information is not confidently known, say so briefly rather than guessing.\n- Focus on the last ~12-18 months for 'recent_developments'.\n- Keep each field concise but information-dense (3-6 sentences for prose fields).\n- Do not include URLs in the structured fields; keep prose clean.",
+          "model": {
+            "model_name": "north-large-01-2026",
+            "provider_name": "cohere_platform"
+          },
+          "tools": ["tavily_web_search"],
+          "output_format": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "company_name": { "type": "string" },
+              "headquarters": { "type": "string" },
+              "business_overview": { "type": "string" },
+              "key_products_services": { "type": "string" },
+              "target_customers": { "type": "string" },
+              "recent_developments": { "type": "string" },
+              "financial_highlights": { "type": "string" },
+              "market_position": { "type": "string" },
+              "competitive_strengths": { "type": "string" },
+              "key_challenges_risks": { "type": "string" },
+              "future_outlook": { "type": "string" }
+            },
+            "required": [
+              "company_name",
+              "business_overview",
+              "key_products_services",
+              "recent_developments",
+              "market_position",
+              "competitive_strengths",
+              "key_challenges_risks",
+              "future_outlook"
+            ]
+          },
+          "max_iterations": null,
+          "max_tokens": null,
+          "reasoning_enabled": null,
+          "system_prompt": null
+        }
+      },
+      {
+        "node_id": "node-GX1q6qUq",
+        "name": "Cumulative Comparative Synthesis",
+        "parent_node_id": "node-UHYq12DQ",
+        "display_properties": { "pos_x": 320.0, "pos_y": 0.0 },
+        "config": {
+          "node_type_id": "nodes::agent",
+          "prompt": "You are a strategy consultant maintaining a running comparative analysis of tech companies. On each loop iteration you fold one freshly-researched company into the running summary.\n\n=== RUNNING SUMMARY FROM PREVIOUS ITERATIONS (empty on the first iteration) ===\n\nExecutive Summary so far:\n{{ results.node-UHYq12DQ.iterations.size() > 1 ? results.node-UHYq12DQ.iterations[results.node-UHYq12DQ.iterations.size() - 2].node-GX1q6qUq.output.data.executive_summary : null }}\n\nComparison Table so far:\n{{ results.node-UHYq12DQ.iterations.size() > 1 ? results.node-UHYq12DQ.iterations[results.node-UHYq12DQ.iterations.size() - 2].node-GX1q6qUq.output.data.comparison_table_markdown : null }}\n\nKey Themes so far:\n{{ results.node-UHYq12DQ.iterations.size() > 1 ? results.node-UHYq12DQ.iterations[results.node-UHYq12DQ.iterations.size() - 2].node-GX1q6qUq.output.data.key_themes : null }}\n\nStrategic Insights so far:\n{{ results.node-UHYq12DQ.iterations.size() > 1 ? results.node-UHYq12DQ.iterations[results.node-UHYq12DQ.iterations.size() - 2].node-GX1q6qUq.output.data.strategic_insights : null }}\n\n=== NEW COMPANY RESEARCH (just produced this iteration) ===\n\nCompany Name: {{ results.node-tQ_9Ygx6.output.data.company_name }}\nBusiness Overview: {{ results.node-tQ_9Ygx6.output.data.business_overview }}\nKey Products/Services: {{ results.node-tQ_9Ygx6.output.data.key_products_services }}\nRecent Developments: {{ results.node-tQ_9Ygx6.output.data.recent_developments }}\nMarket Position: {{ results.node-tQ_9Ygx6.output.data.market_position }}\nCompetitive Strengths: {{ results.node-tQ_9Ygx6.output.data.competitive_strengths }}\nChallenges/Risks: {{ results.node-tQ_9Ygx6.output.data.key_challenges_risks }}\nFuture Outlook: {{ results.node-tQ_9Ygx6.output.data.future_outlook }}\n\n=== TASK ===\n\nProduce an UPDATED running summary that includes the new company alongside any companies already covered in the prior summary. If the prior summary is empty (first iteration), produce an initial summary covering only the new company.\n\nReturn these four fields:\n\n1. executive_summary: 4-6 sentence narrative comparing all companies covered so far - what each is best known for, how they differ, and the most important takeaway.\n\n2. comparison_table_markdown: A Markdown table with one row per company covered so far, columns: Company | Core Focus | Primary Customers | Notable Strength | Notable Risk. Keep cells to short phrases. Include the new company as a new row.\n\n3. key_themes: A 3-5 bullet list (use '- ' prefix on each line) of cross-cutting themes across all companies covered so far. Refresh themes to reflect the newly added company.\n\n4. strategic_insights: 4-6 sentence forward-looking analysis: where each company is likely heading, who is best positioned for the next 12-24 months, and why.\n\nBe concrete and analytical. Do not invent facts not present in the research above or in the prior summary.",
+          "model": {
+            "model_name": "north-large-01-2026",
+            "provider_name": "cohere_platform"
+          },
+          "tools": [],
+          "output_format": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "executive_summary": { "type": "string" },
+              "comparison_table_markdown": { "type": "string" },
+              "key_themes": { "type": "string" },
+              "strategic_insights": { "type": "string" }
+            },
+            "required": [
+              "executive_summary",
+              "comparison_table_markdown",
+              "key_themes",
+              "strategic_insights"
+            ]
+          },
+          "max_iterations": null,
+          "max_tokens": null,
+          "reasoning_enabled": null,
+          "system_prompt": null
+        }
+      }
+    ],
+    "edges": [
+      { "from_node_id": "node-xMGwz42Q", "to_node_id": "node-UHYq12DQ", "branch_id": null },
+      { "from_node_id": "node-tQ_9Ygx6", "to_node_id": "node-GX1q6qUq", "branch_id": null }
+    ]
+  },
+  "output_template": "# Tech Company Market Research Report\n\n**Companies analyzed:** {{ inputs.company1 }} · {{ inputs.company2 }} · {{ inputs.company3 }}\n\n_This report was built incrementally: each company was researched in turn, and the comparative summary was refined after every iteration of the loop._\n\n---\n\n## Executive Summary\n\n{{ results.node-UHYq12DQ.iterations[results.node-UHYq12DQ.iterations.size() - 1].node-GX1q6qUq.output.data.executive_summary }}\n\n## At a Glance\n\n{{ results.node-UHYq12DQ.iterations[results.node-UHYq12DQ.iterations.size() - 1].node-GX1q6qUq.output.data.comparison_table_markdown }}\n\n## Key Cross-Company Themes\n\n{{ results.node-UHYq12DQ.iterations[results.node-UHYq12DQ.iterations.size() - 1].node-GX1q6qUq.output.data.key_themes }}\n\n## Strategic Insights\n\n{{ results.node-UHYq12DQ.iterations[results.node-UHYq12DQ.iterations.size() - 1].node-GX1q6qUq.output.data.strategic_insights }}\n\n---\n\n## Per-Company Profiles\n\n### 1. {{ results.node-UHYq12DQ.iterations[0].node-tQ_9Ygx6.output.data.company_name }}\n\n**Business overview.** {{ results.node-UHYq12DQ.iterations[0].node-tQ_9Ygx6.output.data.business_overview }}\n\n**Key products & services.** {{ results.node-UHYq12DQ.iterations[0].node-tQ_9Ygx6.output.data.key_products_services }}\n\n**Recent developments (last 12-18 months).** {{ results.node-UHYq12DQ.iterations[0].node-tQ_9Ygx6.output.data.recent_developments }}\n\n**Market position.** {{ results.node-UHYq12DQ.iterations[0].node-tQ_9Ygx6.output.data.market_position }}\n\n**Competitive strengths.** {{ results.node-UHYq12DQ.iterations[0].node-tQ_9Ygx6.output.data.competitive_strengths }}\n\n**Challenges & risks.** {{ results.node-UHYq12DQ.iterations[0].node-tQ_9Ygx6.output.data.key_challenges_risks }}\n\n**Future outlook.** {{ results.node-UHYq12DQ.iterations[0].node-tQ_9Ygx6.output.data.future_outlook }}\n\n---\n\n### 2. {{ results.node-UHYq12DQ.iterations[1].node-tQ_9Ygx6.output.data.company_name }}\n\n**Business overview.** {{ results.node-UHYq12DQ.iterations[1].node-tQ_9Ygx6.output.data.business_overview }}\n\n**Key products & services.** {{ results.node-UHYq12DQ.iterations[1].node-tQ_9Ygx6.output.data.key_products_services }}\n\n**Recent developments (last 12-18 months).** {{ results.node-UHYq12DQ.iterations[1].node-tQ_9Ygx6.output.data.recent_developments }}\n\n**Market position.** {{ results.node-UHYq12DQ.iterations[1].node-tQ_9Ygx6.output.data.market_position }}\n\n**Competitive strengths.** {{ results.node-UHYq12DQ.iterations[1].node-tQ_9Ygx6.output.data.competitive_strengths }}\n\n**Challenges & risks.** {{ results.node-UHYq12DQ.iterations[1].node-tQ_9Ygx6.output.data.key_challenges_risks }}\n\n**Future outlook.** {{ results.node-UHYq12DQ.iterations[1].node-tQ_9Ygx6.output.data.future_outlook }}\n\n---\n\n### 3. {{ results.node-UHYq12DQ.iterations[2].node-tQ_9Ygx6.output.data.company_name }}\n\n**Business overview.** {{ results.node-UHYq12DQ.iterations[2].node-tQ_9Ygx6.output.data.business_overview }}\n\n**Key products & services.** {{ results.node-UHYq12DQ.iterations[2].node-tQ_9Ygx6.output.data.key_products_services }}\n\n**Recent developments (last 12-18 months).** {{ results.node-UHYq12DQ.iterations[2].node-tQ_9Ygx6.output.data.recent_developments }}\n\n**Market position.** {{ results.node-UHYq12DQ.iterations[2].node-tQ_9Ygx6.output.data.market_position }}\n\n**Competitive strengths.** {{ results.node-UHYq12DQ.iterations[2].node-tQ_9Ygx6.output.data.competitive_strengths }}\n\n**Challenges & risks.** {{ results.node-UHYq12DQ.iterations[2].node-tQ_9Ygx6.output.data.key_challenges_risks }}\n\n**Future outlook.** {{ results.node-UHYq12DQ.iterations[2].node-tQ_9Ygx6.output.data.future_outlook }}\n"
+}
