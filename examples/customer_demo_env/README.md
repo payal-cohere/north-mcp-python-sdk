@@ -7,7 +7,7 @@ OAuth grants needed to walk a prospect through the platform.
 Setup splits into two phases:
 
 | Phase | Owner | File|
-|---|---|---|---|
+|---|---|---|
 | **1. Deployment prerequisites** (manual) | Deployment admin (admin UI) | Manual
 | **2. Per-user provisioning** (automated) | Every new demo  | [`provision_mvp_north.sh`](./provision_mvp_north.sh) |
 
@@ -84,6 +84,16 @@ NORTH_API_TOKEN=
   tenant config.
 - `NORTH_API_TOKEN` is auto-managed; you should leave it blank. Step 0 of the script refreshes it.
 
+### 1.5 install requirements
+
+cd /path-to-repo/north-mcp-python-sdk
+
+# ---- one-time setup (only run if .venv doesn't exist yet) ----
+python3 -m venv .venv
+.venv/bin/pip install httpx
+# ---- every new terminal session ----
+source .venv/bin/activate
+
 ### Phase 1 checklist
 
 - [ ] Automations feature flag = `true`
@@ -94,6 +104,7 @@ NORTH_API_TOKEN=
 - [ ] `All Users` group granted `Can use automations` + `Can build automations`
 - [ ] GCP OAuth client has the deployment's `/internal/v1/tool/auth` redirect URI
 - [ ] `.env` filled in at repo root
+- [ ] Requirements have been installed
 
 When all boxes are ticked, Phase 2 is unblocked.
 
@@ -109,14 +120,14 @@ helpers detect and skip already-existing users.
 
 Per user, after a successful run:
 
-| # | Resource | Created by | Idempotent? |
-|---|---|---|---|
-| 1 | A North account (signup + signin verified) | `north_create_user.py` | Yes — `EMAIL_ALREADY_EXISTS` falls back to `/v1/signin` |
-| 2 | A **Web Reasoning Researcher** agent (tavily_web_search + reasoning, 3 icebreakers) | `north_create_agent.py` | No (re-runs create duplicates — agent names aren't unique) |
-| 3 | A PDF uploaded to the user's My Drive | `north_my_drive.py upload --allow-overwrite` | Yes |
-| 4 | A **Boeing 10-K Analyst** my_drive agent scoped to that PDF | `north_create_my_drive_agent.py` | No |
-| 5 | A copy of a pre-built **company-market-research** automation, imported and published | `north_import_automation.py` | No (re-runs create fresh duplicates) |
-| 6 | OAuth consent completed for `gmail` and `google_drive` (browser flow) | `north_manage_tools.py auth-tool` | Yes — script detects already-authenticated tools and no-ops |
+| # | Resource | Created by | 
+|---|---|---|
+| 1 | A North account (signup + signin verified) | `north_create_user.py` 
+| 2 | A **Web Reasoning Researcher** agent (tavily_web_search + reasoning, 3 icebreakers) | `north_create_agent.py` |
+| 3 | A PDF uploaded to the user's My Drive | `north_my_drive.py upload --allow-overwrite` |
+| 4 | A **Boeing 10-K Analyst** my_drive agent scoped to that PDF | `north_create_my_drive_agent.py` | 
+| 5 | A copy of a pre-built **company-market-research** automation, imported and published | `north_import_automation.py` | 
+| 6 | OAuth consent completed for `gmail` and `google_drive` (browser flow) | `north_manage_tools.py auth-tool` | 
 
 ### Usage
 
