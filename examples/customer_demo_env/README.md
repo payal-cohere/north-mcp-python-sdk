@@ -6,9 +6,9 @@ OAuth grants needed to walk a prospect through the platform.
 
 Setup splits into two phases:
 
-| Phase | Owner | When | Covered by |
+| Phase | Owner | File|
 |---|---|---|---|
-| **1. Deployment prerequisites** (manual) | Deployment admin (admin UI) 
+| **1. Deployment prerequisites** (manual) | Deployment admin (admin UI) | Manual
 | **2. Per-user provisioning** (automated) | Every new demo  | [`provision_mvp_north.sh`](./provision_mvp_north.sh) |
 
 If Phase 1 is done correctly, Phase 2 reduces to a single command:
@@ -37,14 +37,10 @@ Open `https://<deployment>/admin` and check each item.
 | 3 | Configurations → **Feature flags** | RAG parsing of docs (image-aware response) | `true` | Image content is taken into account when generating the final response.|
 | 4 | Configurations → **Tool catalog** | `web_search` (a.k.a. `tavily_web_search`) | enabled | Should be the **only** default-enabled web tool. The legacy `search_the_web` / `web_scrape` entries should be **disabled** so the catalog is clean. |
 | 5 | Configurations → **Tool catalog** | `gmail`, `google_drive` | enabled | 
-
-> **Permissions.** Under Admin → **Permissions**, assign the `All Users` group to:
->
-> - **Can use automations**
-> - **Can build automations**
->
+| 6 | Under Admin → **Permissions** | assign the 'All users' group to **Can use automation**, **Can build automations** |
 
 ### 1.2 Google Cloud Console — OAuth app
+**TO FIGURE HOW THIS STEP CAN BE AUTOMATED**
 
 For `gmail` and `google_drive` per-user OAuth to succeed in Phase 2, the
 deployment's Dex/OAuth callback URL must be registered in the Google Cloud
@@ -73,7 +69,7 @@ under Cohere's external-demo tenant:
 
 ### 1.4 `.env` file at the repo root
 
-Create `.env` (`chmod 600`) at the repo root with at least:
+Create `.env` (`chmod 600`) at the repo root with:
 
 ```text
 NORTH_BASE_URL=https://<deployment>.democloud.cohere.com/api
@@ -88,7 +84,7 @@ NORTH_API_TOKEN=
   tenant config.
 - `NORTH_API_TOKEN` is auto-managed; you should leave it blank. Step 0 of the script refreshes it.
 
-### Phase 1 checklist (copy-paste)
+### Phase 1 checklist
 
 - [ ] Automations feature flag = `true`
 - [ ] Image input feature flag = `true`
@@ -99,7 +95,7 @@ NORTH_API_TOKEN=
 - [ ] GCP OAuth client has the deployment's `/internal/v1/tool/auth` redirect URI
 - [ ] `.env` filled in at repo root
 
-When all 9 boxes are ticked, Phase 2 is unblocked.
+When all boxes are ticked, Phase 2 is unblocked.
 
 ---
 
