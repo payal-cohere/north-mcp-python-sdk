@@ -88,10 +88,10 @@ NORTH_API_TOKEN=
 
 cd /path-to-repo/north-mcp-python-sdk
 
-# ---- one-time setup (only run if .venv doesn't exist yet) ----
+#### ---- one-time setup (only run if .venv doesn't exist yet) ----
 python3 -m venv .venv
 .venv/bin/pip install httpx
-# ---- every new terminal session ----
+#### ---- every new terminal session ----
 source .venv/bin/activate
 
 ### Phase 1 checklist
